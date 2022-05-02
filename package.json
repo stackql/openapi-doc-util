@@ -1,0 +1,53 @@
+{
+  "name": "@stackql/openapi-doc-util",
+  "version": "1.1.0",
+  "description": "Command line utility to split OpenAPI documents into smaller, self contained, service oriented documents and prepare StackQL provider interfaces",
+  "main": "src/index.js",
+  "bin": {
+    "openapi-doc-util": "bin/openapi-doc-util"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "stackql",
+    "openapi-doc-util",
+    "openapi"
+  ],
+  "author": "Jeffrey Aven",
+  "license": "MIT",
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "@readme/openapi-parser": "^2.0.4",
+    "arg": "^4.1.0",
+    "chalk": "^2.4.2",
+    "command-line-usage": "^6.1.1",
+    "covgen": "^3.1.0",
+    "esm": "^3.2.18",
+    "execa": "^1.0.0",
+    "gitignore": "^0.6.0",
+    "inquirer": "^6.2.2",
+    "js-hcl-parser": "^1.0.1",
+    "js-yaml": "4.1.0",
+    "jsonpath": "^1.1.1",
+    "listr": "^0.14.3",
+    "ncp": "^2.0.0",
+    "pkg-install": "^0.2.0",
+    "spdx-license-list": "^5.0.0"
+  },
+  "files": [
+    "bin/",
+    "src/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stackql/openapi-doc-util.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stackql/openapi-doc-util/issues"
+  },
+  "homepage": "https://github.com/stackql/openapi-doc-util#readme"
+}
