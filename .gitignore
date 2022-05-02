@@ -1,6 +1,7 @@
 # Testing
 dev
 *.yaml
+*.txt
 
 # Logs
 logs
