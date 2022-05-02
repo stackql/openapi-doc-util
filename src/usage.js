@@ -133,13 +133,23 @@ const devUsage = [
       header: 'Arguments',
       content: [
         { name: 'apiDocDirRoot', summary: '[REQUIRED] Directory root containing Open API documents for the provider you are creating a stackql provider interface for.' },
-        { name: 'stackqlProviderName', summary: providerNameDesc },
-        { name: 'stackqlProviderVersion', summary: providerVerDesc },
       ]
     },
     {
         header: 'Flags',
         optionList: [
+          {
+            name: 'providerName',
+            alias: 'n',
+            type: String,
+            description: providerNameDesc,
+          },
+          {
+            name: 'providerVersion',
+            alias: 'v',
+            type: String,
+            description: providerVerDesc,
+          },        
           {
             name: 'resdiscriminator',
             alias: 'r',
@@ -188,26 +198,41 @@ const buildUsage = [
       {
         header: 'Arguments',
         content: [
-          { name: 'providerDevDocRoot', summary: 'Source directory containing stackql provider development documents generated using the dev command.' },
-          { name: 'stackqlProviderName', summary: providerNameDesc },
-          { name: 'stackqlProviderVersion', summary: providerVerDesc },
+          { name: 'providerDevDocRoot', summary: 'Source directory containing stackql provider development documents generated using the provider-dev command.' },
         ]
       },
       {
           header: 'Flags',
           optionList: [
             {
+              name: 'providerName',
+              alias: 'n',
+              type: String,
+              description: providerNameDesc,
+            },
+            {
+              name: 'providerVersion',
+              alias: 'v',
+              type: String,
+              description: providerVerDesc,
+            },        
+            {
               name: 'output',
               alias: 'o',
               type: String,
               typeLabel: '{underline directory}',
-              description: 'Directory to write the generated stackql provider documents to. (defaults to cwd)',
+              description: '[OPTIONAL] Directory to write the generated stackql provider development documents to. (defaults to cwd)',
             },
+            {
+              name: 'overwrite',
+              type: Boolean,
+              description: overwriteDesc,
+            },        
             {
               name: 'debug',
               alias: 'd',
               type: Boolean,
-              description: 'Debug flag. (defaults to false)',
+              description: debugDesc,
             },                                        
           ]
         }
