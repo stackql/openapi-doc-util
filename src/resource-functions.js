@@ -1,11 +1,19 @@
 const jp = require('jsonpath');
 import { log } from './shared-functions.js';
 
-function getResourceName(operation, service, resDiscriminator){
-    let resValue = jp.query(operation, resDiscriminator)[0];
-    let resource = resValue ? resValue : service;
-    resource = resource.replace(/-/g, '_');
-    return resource;
+function getResourceName(providerName, operation, service, resDiscriminator, pathTokens){
+    if(resDiscriminator == 'path_tokens'){
+        let resTokens = [];
+        for (let i in pathTokens) {
+            if (!(pathTokens[i].startsWith('{')) && !(pathTokens[i].match(/[v]\d/)) && pathTokens[i] != service && pathTokens[i].length > 0){
+                resTokens.push(pathTokens[i]);
+            }
+        }
+        return resTokens.length > 0 ? resTokens.join('_') : service;
+    } else {
+        let resValue = jp.query(operation, resDiscriminator)[0];
+        return resValue ? resValue.replace(/-/g, '_') : service;
+    }
 }
 
 function getOperationId(apiPaths, pathKey, verbKey, methodKey){
@@ -38,9 +46,9 @@ function getResponseCode(responses){
 
 function getSqlVerb(operationId){
     let verb = 'exec';
-    if (operationId.startsWith('get') || operationId.startsWith('list') || operationId.startsWith('select')){
+    if (operationId.startsWith('get') || operationId.startsWith('list') || operationId.startsWith('select') || operationId.startsWith('read')){
         verb = 'select';
-    } else if (operationId.startsWith('create') || operationId.startsWith('insert') || operationId.startsWith('add')){
+    } else if (operationId.startsWith('create') || operationId.startsWith('insert') || operationId.startsWith('add') || operationId.startsWith('post')){
         verb = 'insert';
     } else if (operationId.startsWith('delete') || operationId.startsWith('remove')){
         verb = 'delete';
@@ -98,6 +106,7 @@ function addSqlVerb(resData, operationId, resource, pathKey){
                 {
                     '$ref': `#/components/x-stackQL-resources/${resource}/methods/${operationId}`,
                     'path': pathKey,
+                    'numTokens': (pathKey.match(/\{[\w]*\}/g) || []).length,   
                     'tokens': (pathKey.match(/\{[\w]*\}/g) || []).join(','),
                     'enabled': true
                 });
@@ -107,6 +116,7 @@ function addSqlVerb(resData, operationId, resource, pathKey){
                 {
                     '$ref': `#/components/x-stackQL-resources/${resource}/methods/${operationId}`,
                     'path': pathKey,
+                    'numTokens': (pathKey.match(/\{[\w]*\}/g) || []).length,   
                     'tokens': (pathKey.match(/\{[\w]*\}/g) || []).join(','),
                     'enabled': true                                        
                 });
@@ -116,6 +126,7 @@ function addSqlVerb(resData, operationId, resource, pathKey){
                 {
                     '$ref': `#/components/x-stackQL-resources/${resource}/methods/${operationId}`,
                     'path': pathKey,
+                    'numTokens': (pathKey.match(/\{[\w]*\}/g) || []).length,   
                     'tokens': (pathKey.match(/\{[\w]*\}/g) || []).join(','),
                     'enabled': true
                 });
@@ -124,6 +135,18 @@ function addSqlVerb(resData, operationId, resource, pathKey){
             break;
     };
     return resData;
+}
+
+function compareSqlVerbObjects( a, b ) {
+    let aCount = (a.path.match(/\{[\w]*\}/g) || []).length;
+    let bCount = (b.path.match(/\{[\w]*\}/g) || []).length;
+    if (aCount > bCount) {
+        return -1;
+    }
+    if (aCount > bCount) {
+        return 1;
+    }
+    return 0;
 }
 
 function updateProviderData(
@@ -160,4 +183,5 @@ export {
     addOperation,
     addSqlVerb,
     updateProviderData,
+    compareSqlVerbObjects,
   }

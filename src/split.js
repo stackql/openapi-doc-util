@@ -19,6 +19,8 @@ import {
     addRefsToComponents,
     retServiceNameAndDesc,
     initService,
+    operations,
+    nonOperations,
 } from './service-functions.js';
 import { showUsage } from './usage.js';
 
@@ -70,40 +72,63 @@ export async function split(options) {
         Object.keys(apiPaths[pathKey]).forEach(verbKey => {
             log('info', `processing operation ${pathKey}:${verbKey}`);
 
-            // determine service using discriminator
-            let [service, serviceDesc] = retServiceNameAndDesc(providerName, apiPaths[pathKey][verbKey], pathKey, svcDiscriminator, api.tags);
-            log('info', `service name : ${service}`);
-            log('debug', `service desc : ${serviceDesc}`, options.debug);
+            // if verbKey in operations, then process
+            if (operations.includes(verbKey)){
+                // determine service using discriminator
+                let [service, serviceDesc] = retServiceNameAndDesc(providerName, apiPaths[pathKey][verbKey], pathKey, svcDiscriminator, api.tags);
+                log('info', `service name : ${service}`);
+                log('debug', `service desc : ${serviceDesc}`, options.debug);
 
-            if (!services.hasOwnProperty(service)){
-                // fisrt occurance of the service, init service map
-                log('debug', `first occurance of ${service}`, options.debug);
+                if (!services.hasOwnProperty(service)){
+                    // fisrt occurance of the service, init service map
+                    log('debug', `first occurance of ${service}`, options.debug);
 
-                services = initService(services, componentsChildren, service, serviceDesc, api);
+                    services = initService(services, componentsChildren, service, serviceDesc, api);
 
+                }
+
+                // add operation to service
+                if (!services[service]['paths'].hasOwnProperty(pathKey)){
+                    log('debug', `first occurance of ${pathKey}`, options.debug);
+                    services[service]['paths'][pathKey] = {};
+                    services[service]['paths'][pathKey][verbKey] = apiPaths[pathKey][verbKey];
+                } else {
+                    services[service]['paths'][pathKey][verbKey] = apiPaths[pathKey][verbKey];
+                };
+
+                // get all refs for operation
+                let opRefs = getAllRefs(apiPaths[pathKey][verbKey]);
+                log('debug', `found ${opRefs.length} refs for ${service}`, options.debug);
+
+                // add refs to components in service map
+                addRefsToComponents(opRefs, services[service], api.components, options.debug)
+
+                // get internal refs
+                let intRefs = getAllRefs(services[service]['components']);
+                log('debug', `found ${intRefs.length} INTERNAL refs`, options.debug);
+                addRefsToComponents(intRefs, services[service], api.components, options.debug)
             }
 
-            // add operation to service
-            if (!services[service]['paths'].hasOwnProperty(pathKey)){
-                log('debug', `first occurance of ${pathKey}`, options.debug);
-                services[service]['paths'][pathKey] = {};
-                services[service]['paths'][pathKey][verbKey] = apiPaths[pathKey][verbKey];
-            } else {
-                services[service]['paths'][pathKey][verbKey] = apiPaths[pathKey][verbKey];
-            };
+        });
+    });
 
-            // get all refs for operation
-            let opRefs = getAllRefs(apiPaths[pathKey][verbKey]);
-            log('debug', `found ${opRefs.length} refs for ${service}`, options.debug);
-
-            // add refs to components in service map
-            addRefsToComponents(opRefs, services[service], api.components, options.debug)
-
-            // get internal refs
-            let intRefs = getAllRefs(services[service]['components']);
-            log('debug', `found ${intRefs.length} INTERNAL refs`, options.debug);
-            addRefsToComponents(intRefs, services[service], api.components, options.debug)
-
+    // add non operations to each service
+    Object.keys(services).forEach(service => {
+        Object.keys(services[service]['paths']).forEach(pathKey => {
+            log('debug',`adding non operations to ${service} for path ${pathKey}`, options.debug);
+            for (let nonOpIx in nonOperations){
+                log('debug', `looking for non operation ${nonOperations[nonOpIx]} in ${service} under path ${pathKey}`, options.debug);
+                if(apiPaths[pathKey][nonOperations[nonOpIx]]){
+                    log('debug', `adding ${nonOperations[nonOpIx]} to ${service} for path ${pathKey}`, options.debug);
+                    // services[service]['paths'][pathKey][nonOperations[nonOpIx]] = apiPaths[pathKey][nonOperations[nonOpIx]];
+                    // interim fix
+                    if(nonOperations[nonOpIx] == 'parameters'){
+                        Object.keys(services[service]['paths'][pathKey]).forEach(verbKey => {
+                            services[service]['paths'][pathKey][verbKey]['parameters'] = apiPaths[pathKey]['parameters'];
+                        });
+                    };
+                }
+            }
         });
     });
 

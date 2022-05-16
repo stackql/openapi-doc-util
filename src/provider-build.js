@@ -55,6 +55,7 @@ export async function providerBuild(options) {
     
     // iterate through services dir
     const services = fs.readdirSync(`${inputDir}/services`);
+    log('debug', JSON.stringify(services), options.debug);
     for (const service of services) {
 
         log('info', `processing ${service}...`);
@@ -85,7 +86,6 @@ export async function providerBuild(options) {
         
         // iterate through resources remove dev keys
         let xStackQLResources = resourceDefs['components']['x-stackQL-resources'];
-
         try {
             Object.keys(xStackQLResources).forEach(xStackQLResKey => {
                 // clean up pointers
@@ -122,9 +122,8 @@ export async function providerBuild(options) {
             const outputFile = `${destDir}/services/${service}.yaml`;
             log('info', `writing service doc to ${outputFile}...`);
             fs.writeFileSync(outputFile, yaml.dump(outputData, {lineWidth: -1}));
-    
-
         } catch (e) {
+            log('error', e);
             return false
         }            
     }

@@ -21,7 +21,11 @@ import {
     addOperation,
     addSqlVerb,
     updateProviderData,
+    compareSqlVerbObjects,
 } from './resource-functions.js';
+import {
+    operations,
+} from './service-functions.js';
 import { showUsage } from './usage.js';
 const yaml = require('js-yaml');
 
@@ -74,38 +78,49 @@ export async function providerDev(options) {
             log('debug', `processing path [${pathKey}]`, options.debug);
             Object.keys(api.paths[pathKey]).forEach(verbKey => {
                 log('debug', `processing operation [${pathKey}:${verbKey}]`);
-                try {
-                    // get resource name
-                    let resource = getResourceName(api.paths[pathKey][verbKey], service, resDiscriminator);
-                    log('debug', `resource : [${resource}]`, options.debug);
 
-                    if (!resData['components']['x-stackQL-resources'].hasOwnProperty(resource)){
-                        // fisrt occurance of the resource, init resource
-                        resData = addResource(resData, providerName, service, resource);
+                if (operations.includes(verbKey)){
+                    try {
+                        // get resource name
+                        let resource = getResourceName(providerName, api.paths[pathKey][verbKey], service, resDiscriminator, pathKey.split('/'));
+                        log('debug', `resource : [${resource}]`, options.debug);
+    
+                        if (!resData['components']['x-stackQL-resources'].hasOwnProperty(resource)){
+                            // fisrt occurance of the resource, init resource
+                            resData = addResource(resData, providerName, service, resource);
+                        }
+                        
+                        // get id 
+                        let operationId = getOperationId(api.paths, pathKey, verbKey, methodKey);
+                      
+                        if(operationId){
+                            log('info', `operationId : [${operationId}]`);
+                        } else {
+                            throw 'Break';
+                        }
+                        
+                        // add operation to resource
+                        resData = addOperation(resData, service, resource, operationId, api.paths, pathKey, verbKey);
+    
+                        // map sqlVerbs for operation
+                        resData = addSqlVerb(resData, operationId, resource, pathKey);
+    
+                    } catch (e) {
+                        if (e !== 'Break') throw e
                     }
-                    
-                    // get id 
-                    let operationId = getOperationId(api.paths, pathKey, verbKey, methodKey);
-                  
-                    if(operationId){
-                        log('info', `operationId : [${operationId}]`);
-                    } else {
-                        throw 'Break';
-                    }
-                    
-                    // add operation to resource
-                    resData = addOperation(resData, service, resource, operationId, api.paths, pathKey, verbKey);
-
-                    // map sqlVerbs for operation
-                    resData = addSqlVerb(resData, operationId, resource, pathKey);
-
-                } catch (e) {
-                    if (e !== 'Break') throw e
                 }
 
             });
         });
-        
+     
+        // order sqlVerbs
+        Object.keys(resData['components']['x-stackQL-resources']).forEach(res => {
+            resData['components']['x-stackQL-resources'][res]['sqlVerbs']['select'].sort( compareSqlVerbObjects );
+            resData['components']['x-stackQL-resources'][res]['sqlVerbs']['insert'].sort( compareSqlVerbObjects );
+            resData['components']['x-stackQL-resources'][res]['sqlVerbs']['update'].sort( compareSqlVerbObjects );
+            resData['components']['x-stackQL-resources'][res]['sqlVerbs']['delete'].sort( compareSqlVerbObjects );
+        });
+
         // write out resources doc
         if (fs.existsSync(resDoc) && !options.overwrite){
             log('error', `${resDoc} exists and overwrite is false`);

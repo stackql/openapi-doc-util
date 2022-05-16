@@ -11,7 +11,23 @@ const componentsChildren = [
     'examples', 
     'requestBodies', 
     'headers', 
-    'links'
+    'links',
+];
+
+const operations = [
+    'get',
+    'put',
+    'post',
+    'delete',
+    'options',
+    'head',
+    'patch',
+    'trace',
+];
+
+const nonOperations = [
+    'servers',
+    'parameters',
 ];
 
 function getAllRefs(obj, refs=[]) {
@@ -61,7 +77,7 @@ function initService(services, componentsChildren, service, serviceDesc, api){
         services[service]['components'][componentsChildren[compChild]] = {};
     }
 
-    services[service]['openapi'] = api.openapi;
+    services[service]['openapi'] = api.openapi || '3.0.0';
     services[service]['servers'] = api.servers;
     services[service]['security'] = api.security;
     services[service]['tags'] = api.tags;
@@ -85,5 +101,7 @@ export {
     addRefsToComponents,
     retServiceNameAndDesc,
     initService,
+    operations,
+    nonOperations,
   }
   
