@@ -82,7 +82,7 @@ export async function providerDev(options) {
                 if (operations.includes(verbKey)){
                     try {
                         // get resource name
-                        let resource = getResourceName(providerName, api.paths[pathKey][verbKey], service, resDiscriminator, pathKey.split('/'));
+                        let resource = getResourceName(providerName, api.paths[pathKey][verbKey], service, resDiscriminator, pathKey);
                         log('debug', `resource : [${resource}]`, options.debug);
     
                         if (!resData['components']['x-stackQL-resources'].hasOwnProperty(resource)){

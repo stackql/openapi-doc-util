@@ -1,6 +1,9 @@
 const jp = require('jsonpath');
 import { getCustomServiceNameAndDesc } from './provider-custom-functions.js';
-import { log } from './shared-functions.js';
+import { 
+    log,
+    getMeaningfulPathTokens, 
+} from './shared-functions.js';
 
 const componentsChildren = [
     'schemas', 
@@ -62,8 +65,12 @@ function retServiceNameAndDesc( providerName, operation, pathKey, discriminator,
     if (discriminator.startsWith('svcName:')){
         return discriminator.split(':')[1], discriminator.split(':')[1];
     } else {
-        let thisSvc = jp.query(operation, discriminator)[0] || 'svc';
-        thisSvc = thisSvc.replace(/-/g, '_');
+        let thisSvc = 'svc';
+        if(discriminator == 'path_tokens') {
+            thisSvc = getMeaningfulPathTokens(pathKey)[0] || 'svc';
+        } else {
+            thisSvc = jp.query(operation, discriminator)[0].replace(/-/g, '_') || 'svc';
+        }
         return getCustomServiceNameAndDesc(thisSvc, providerName, pathKey, tags);
     };
 }

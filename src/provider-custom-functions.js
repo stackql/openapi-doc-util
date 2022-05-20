@@ -6,11 +6,13 @@ function getCustomServiceNameAndDesc(serviceName, providerName, pathKey, tags){
             name = getGitHubServiceName(serviceName, pathKey);
             desc = getGitHubServiceDesc(serviceName, tags);
             return [name, desc]; 
-        case 'netlify':
+       case 'netlify':
             return getNetlifyServiceNameAndDesc(serviceName, tags);
         default:
             return [serviceName, serviceName];
     };
+    //.toLowerCase()
+    //.replace(/ /g, '_')
 }
 
 function getCustomResourceName(resource, providerName, pathKey){

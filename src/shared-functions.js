@@ -42,8 +42,40 @@ function createDestDir(dir, overwrite){
     }
 }
 
+function camelToSnake(str){
+    return str.replace(/\.?([A-Z])/g, function (x,y){
+        return "_" + y.toLowerCase()
+    }).replace(/^_/, "")
+}
+
+function capitalizeFirstLetter(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function isMeaningfulToken(token){
+    if(token.startsWith('{') || token.match(/[v]\d/) || token.match(/^\d/) || token == 'rest' || token == 'api'){
+        return false;
+    } else {
+        return true;
+    }
+}
+
+function getMeaningfulPathTokens(pathKey){
+    let outTokens = [];
+    let inTokens = pathKey.split('/');
+    inTokens.forEach(token => {
+        if(isMeaningfulToken(token)){
+            outTokens.push(token);
+        }
+    });
+    return outTokens;
+}
+
 export { 
     log,
     printOptions,
     createDestDir,
+    camelToSnake,
+    capitalizeFirstLetter,
+    getMeaningfulPathTokens,
 };

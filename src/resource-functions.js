@@ -1,18 +1,25 @@
 const jp = require('jsonpath');
-import { log } from './shared-functions.js';
+import { 
+    log,
+    camelToSnake,
+    capitalizeFirstLetter,
+    getMeaningfulPathTokens,
+ } 
+from './shared-functions.js';
 
-function getResourceName(providerName, operation, service, resDiscriminator, pathTokens){
+function getResourceName(providerName, operation, service, resDiscriminator, pathKey){
     if(resDiscriminator == 'path_tokens'){
         let resTokens = [];
+        let pathTokens = getMeaningfulPathTokens(pathKey);
         for (let i in pathTokens) {
-            if (!(pathTokens[i].startsWith('{')) && !(pathTokens[i].match(/[v]\d/)) && pathTokens[i] != service && pathTokens[i].length > 0){
-                resTokens.push(pathTokens[i]);
+            if (pathTokens[i] != service && pathTokens[i].length > 0){
+                resTokens.push(camelToSnake(pathTokens[i]));
             }
         }
         return resTokens.length > 0 ? resTokens.join('_') : service;
     } else {
         let resValue = jp.query(operation, resDiscriminator)[0];
-        return resValue ? resValue.replace(/-/g, '_') : service;
+        return resValue ? camelToSnake(resValue.replace(/-/g, '_')) : service;
     }
 }
 
@@ -77,7 +84,7 @@ function addResource(resData, providerName, service, resource){
     resData['components']['x-stackQL-resources'][resource] = {};
     resData['components']['x-stackQL-resources'][resource]['id'] = `${providerName}.${service}.${resource}`;
     resData['components']['x-stackQL-resources'][resource]['name'] = `${resource}`;
-    resData['components']['x-stackQL-resources'][resource]['title'] = `${resource}`;
+    resData['components']['x-stackQL-resources'][resource]['title'] = `${capitalizeFirstLetter(resource)}`;
     resData['components']['x-stackQL-resources'][resource]['methods'] = {};
     resData['components']['x-stackQL-resources'][resource]['sqlVerbs'] = {};
     resData['components']['x-stackQL-resources'][resource]['sqlVerbs']['select'] = [];

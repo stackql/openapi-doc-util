@@ -162,11 +162,13 @@ The __*service discriminator*__ option is used to determine how to split a large
 
 > Example: `-s "$['x-github'].category"` would split the given provider API spec into service documents by matching the `x-github.category` value in each unique operation (combination of a path and an HTTP method) in API doc.
 
-__`--resDiscriminator`, `-r`__  *JSONPath expression*  
+__`--resDiscriminator`, `-r`__  *JSONPath expression*  OR *path_tokens*
 
 The __*resource discriminator*__ option is used to determine how to identify StackQL resources in a given provider API spec.  This option is used for the __`provider-dev`__ command and ignored otherwise.
 
 > Example: `-r "$['x-github'].subcategory"`  would identify resources in the given provider API spec by matching the `x-github.subcategory` value in each unique operation (combination of a path and an HTTP method) in API doc.
+
+if *path_tokens* is specified for the __`--resDiscriminator`__ option, the resource name will be derived by joining the 'meaningful' path tokens (not equivalent to the service name) with an '_'.  For instance a path of `/sites/{site_id}/service-instances` would result in a resource name of `sites_service_instances` assuming the service name was not `sites`.  
 
 __`--methodkey`, `-m`__  *JSONPath expression*  
 

@@ -3,6 +3,7 @@ import { split } from './split.js';
 import { validate } from './validate.js';
 import { providerDev } from './provider-dev.js';
 import { providerBuild } from './provider-build.js';
+//import { serviceDocs } from './service-docs.js';
 
 export async function cli(args) {
 
@@ -25,7 +26,10 @@ export async function cli(args) {
                 break;
             case 'provider-build':
                 await providerBuild(options);
-                break;                
+                break; 
+//            case 'service-docs':
+//                await serviceDocs(options);
+//                break;                                
             default:
                 showUsage('unknown');
                 break;
