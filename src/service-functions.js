@@ -67,9 +67,11 @@ function retServiceNameAndDesc( providerName, operation, pathKey, discriminator,
     } else {
         let thisSvc = 'svc';
         if(discriminator == 'path_tokens') {
-            thisSvc = getMeaningfulPathTokens(pathKey)[0] || 'svc';
+            thisSvc = getMeaningfulPathTokens(pathKey)[0] || thisSvc;
         } else {
-            thisSvc = jp.query(operation, discriminator)[0].replace(/-/g, '_') || 'svc';
+            thisSvc = jp.query(operation, discriminator)[0] ? 
+                jp.query(operation, discriminator)[0].replace(/-/g, '_') : 
+                getMeaningfulPathTokens(pathKey)[0];
         }
         return getCustomServiceNameAndDesc(thisSvc, providerName, pathKey, tags);
     };

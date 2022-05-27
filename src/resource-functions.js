@@ -4,6 +4,7 @@ import {
     camelToSnake,
     capitalizeFirstLetter,
     getMeaningfulPathTokens,
+    getAllPathTokens,
  } 
 from './shared-functions.js';
 
@@ -19,7 +20,7 @@ function getResourceName(providerName, operation, service, resDiscriminator, pat
         return resTokens.length > 0 ? resTokens.join('_') : service;
     } else {
         let resValue = jp.query(operation, resDiscriminator)[0];
-        return resValue ? camelToSnake(resValue.replace(/-/g, '_')) : service;
+        return resValue ? camelToSnake(resValue) : service;
     }
 }
 
@@ -32,8 +33,8 @@ function getOperationId(apiPaths, pathKey, verbKey, methodKey){
             return methodKeyPath.replace(/-/g, '_'); 
         }
     } else {
-        log('error', `no method key found for ${pathKey}/${verbKey}`);
-        return false;
+        log('info', `no method key found for ${pathKey}/${verbKey}, using path tokens and verb`);
+        return verbKey + '_' + getAllPathTokens(pathKey).join('_');
     }
 }
 
@@ -106,7 +107,30 @@ function addOperation(resData, service, resource, operationId, apiPaths, pathKey
     return resData;
 }
 
-function addSqlVerb(resData, operationId, resource, pathKey){
+function getRespSchemaName(op){
+    for(let respCode in op.responses){
+        if(respCode.startsWith('2')){
+            return getAllValuesForKey(op.responses[respCode], "$ref", ['examples']);
+        }
+    }
+}
+
+function getAllValuesForKey(obj, key, excludeKeys=[], refs=[]) {
+    for (let k in obj) {
+        if (typeof obj[k] === "object") {
+            if(!excludeKeys.includes(k)){
+                getAllValuesForKey(obj[k], key, excludeKeys, refs)
+            }
+        } else {
+            if (k === key){
+                refs.push(obj[k].split('/').pop());
+            }
+        }
+    }
+    return refs;
+}
+
+function addSqlVerb(op, resData, operationId, resource, pathKey){
     switch (getSqlVerb(operationId)) {
         case 'select':
             resData['components']['x-stackQL-resources'][resource]['sqlVerbs']['select'].push(
@@ -115,7 +139,8 @@ function addSqlVerb(resData, operationId, resource, pathKey){
                     'path': pathKey,
                     'numTokens': (pathKey.match(/\{[\w]*\}/g) || []).length,   
                     'tokens': (pathKey.match(/\{[\w]*\}/g) || []).join(','),
-                    'enabled': true
+                    'enabled': true,
+                    'respSchema': getRespSchemaName(op), 
                 });
             break;
         case 'insert':

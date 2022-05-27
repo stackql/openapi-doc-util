@@ -103,7 +103,7 @@ export async function providerDev(options) {
                         resData = addOperation(resData, service, resource, operationId, api.paths, pathKey, verbKey);
     
                         // map sqlVerbs for operation
-                        resData = addSqlVerb(resData, operationId, resource, pathKey);
+                        resData = addSqlVerb(api.paths[pathKey][verbKey], resData, operationId, resource, pathKey);
     
                     } catch (e) {
                         if (e !== 'Break') throw e

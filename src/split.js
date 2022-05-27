@@ -12,6 +12,7 @@ import {
     log,
     printOptions,
     createDestDir,
+    isOperationExcluded,
  } from './shared-functions.js';
 import {
     componentsChildren,
@@ -73,7 +74,7 @@ export async function split(options) {
             log('info', `processing operation ${pathKey}:${verbKey}`);
 
             // if verbKey in operations, then process
-            if (operations.includes(verbKey)){
+            if (operations.includes(verbKey) && !isOperationExcluded(options.exclude, apiPaths[pathKey][verbKey], svcDiscriminator)){
                 // determine service using discriminator
                 let [service, serviceDesc] = retServiceNameAndDesc(providerName, apiPaths[pathKey][verbKey], pathKey, svcDiscriminator, api.tags);
                 log('info', `service name : ${service}`);
@@ -101,14 +102,16 @@ export async function split(options) {
                 log('debug', `found ${opRefs.length} refs for ${service}`, options.debug);
 
                 // add refs to components in service map
-                addRefsToComponents(opRefs, services[service], api.components, options.debug)
+                addRefsToComponents(opRefs, services[service], api.components, options.debug);
 
                 // get internal refs
-                let intRefs = getAllRefs(services[service]['components']);
-                log('debug', `found ${intRefs.length} INTERNAL refs`, options.debug);
-                addRefsToComponents(intRefs, services[service], api.components, options.debug)
+                let internalRefDepth = 2;
+                for (let i = 0; i < internalRefDepth; i++){
+                    let intRefs = getAllRefs(services[service]['components']);
+                    log('debug', `found ${intRefs.length} INTERNAL refs`, options.debug);
+                    addRefsToComponents(intRefs, services[service], api.components, options.debug);
+                }
             }
-
         });
     });
 
