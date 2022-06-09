@@ -24,14 +24,34 @@ function getResourceName(providerName, operation, service, resDiscriminator, pat
     }
 }
 
-function getOperationId(apiPaths, pathKey, verbKey, methodKey){
-    let methodKeyPath = apiPaths[pathKey][verbKey][methodKey];
-    if (methodKeyPath){
-        if (methodKeyPath.includes('/')){
-            return methodKeyPath.split('/')[1].replace(/-/g, '_'); 
-        } else {
-            return methodKeyPath.replace(/-/g, '_'); 
+function getOperationId(apiPaths, pathKey, verbKey, existingOpIds, methodKey){
+    let operationId = apiPaths[pathKey][verbKey][methodKey];
+    if (operationId){
+        if (operationId.includes('/')){
+            operationId = operationId.split('/')[1]
+        } 
+        operationId = operationId.replace(/-/g, '_').replace(/\./g, '_'); 
+        // check for uniqueness
+        if (existingOpIds.includes(operationId)){
+            // preserve op type
+            if (operationId.endsWith('_list')){
+                operationId = 'list_' + operationId.substring(0, operationId.length - 5);
+            }
+            if (operationId.endsWith('_create')){
+                operationId = 'create_' + operationId.substring(0, operationId.length - 7);
+            }
+            if (operationId.endsWith('_delete')){
+                operationId = 'delete_' + operationId.substring(0, operationId.length - 7);
+            }
+            // get path params
+            let pathParams = (pathKey.match(/\{[\w]*\}/g) || ['by_noparams']);
+            let opSuffixes = []
+            for (let ix in pathParams){
+                opSuffixes.push('by_' + pathParams[ix].replace(/\{|\}/g, ''));
+            }
+            operationId = operationId + '_' + opSuffixes.join('_');
         }
+        return operationId;
     } else {
         log('info', `no method key found for ${pathKey}/${verbKey}, using path tokens and verb`);
         return verbKey + '_' + getAllPathTokens(pathKey).join('_');
@@ -54,11 +74,11 @@ function getResponseCode(responses){
 
 function getSqlVerb(operationId){
     let verb = 'exec';
-    if (operationId.startsWith('get') || operationId.startsWith('list') || operationId.startsWith('select') || operationId.startsWith('read')){
+    if (operationId.startsWith('get') || operationId.startsWith('list') || operationId.startsWith('select') || operationId.startsWith('read') || operationId.endsWith('list')){
         verb = 'select';
-    } else if (operationId.startsWith('create') || operationId.startsWith('insert') || operationId.startsWith('add') || operationId.startsWith('post')){
+    } else if (operationId.startsWith('create') || operationId.startsWith('insert') || operationId.startsWith('add') || operationId.startsWith('post') || operationId.endsWith('create')){
         verb = 'insert';
-    } else if (operationId.startsWith('delete') || operationId.startsWith('remove')){
+    } else if (operationId.startsWith('delete') || operationId.startsWith('remove') || operationId.endsWith('delete')){
         verb = 'delete';
     };
     return verb;
@@ -95,12 +115,12 @@ function addResource(resData, providerName, service, resource){
     return resData;
 }
 
-function addOperation(resData, service, resource, operationId, apiPaths, pathKey, verbKey){
+function addOperation(resData, serviceDirName, resource, operationId, apiPaths, pathKey, verbKey){
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId] = {};
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['operation'] = {};
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response'] = {};
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['operation']['$ref'] = 
-        getOperationRef(service, pathKey, verbKey);
+        getOperationRef(serviceDirName, pathKey, verbKey);
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['mediaType'] = 'application/json';
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['openAPIDocKey'] =
         getResponseCode(apiPaths[pathKey][verbKey]['responses']);
@@ -110,7 +130,7 @@ function addOperation(resData, service, resource, operationId, apiPaths, pathKey
 function getRespSchemaName(op){
     for(let respCode in op.responses){
         if(respCode.startsWith('2')){
-            return getAllValuesForKey(op.responses[respCode], "$ref", ['examples']);
+            return getAllValuesForKey(op.responses[respCode], "$ref", ['examples', 'description', 'headers']);
         }
     }
 }
@@ -183,8 +203,10 @@ function compareSqlVerbObjects( a, b ) {
 
 function updateProviderData(
     providerData, 
-    providerName, 
-    providerVersion, 
+    providerName,
+    providerVersion,
+    serviceDirName, 
+    serviceVersion, 
     service, 
     providerTitle, 
     providerDescription, 
@@ -193,13 +215,13 @@ function updateProviderData(
     serviceDescription){
         providerData.providerServices[service] = {};
         providerData.providerServices[service].description = serviceDescription;
-        providerData.providerServices[service].id = `${service}:${providerVersion}`;
+        providerData.providerServices[service].id = `${service}:${serviceVersion}`;
         providerData.providerServices[service].name = service;
         providerData.providerServices[service].preferred = true;
         providerData.providerServices[service].service = {};
-        providerData.providerServices[service].service['$ref'] = `${providerName}/${providerVersion}/services/${service}.yaml`;
+        providerData.providerServices[service].service['$ref'] = `${providerName}/${providerVersion}/services/${serviceDirName}.yaml`;
         providerData.providerServices[service].title = serviceTitle;
-        providerData.providerServices[service].version = providerVersion;
+        providerData.providerServices[service].version = serviceVersion;
         providerData.openapi = openapi;
         providerData.description = providerDescription;
         providerData.title = providerTitle;

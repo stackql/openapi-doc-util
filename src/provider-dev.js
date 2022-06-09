@@ -60,12 +60,22 @@ export async function providerDev(options) {
     // iterate through services
     const serviceDirs = fs.readdirSync(svcDir)
     for (let service of serviceDirs){
+        const serviceDirName = service;
         log('info', `processing ${service}`);
 
         const svcDoc = `${svcDir}/${service}/${service}.yaml`;
         const resDoc = `${svcDir}/${service}/${service}-resources.yaml`;
 
         let resData = initResData();
+
+        // get service version if it exists
+        let serviceVersion = service.match(/^[\w]*-(v[0-9]*.*)/);
+        if (serviceVersion){
+            serviceVersion = serviceVersion[1];
+            service = service.replace('-' + serviceVersion, '');
+        } else {
+            serviceVersion = providerVersion;
+        }
 
         // read service doc
         let api = await parse(svcDoc);
@@ -90,8 +100,10 @@ export async function providerDev(options) {
                             resData = addResource(resData, providerName, service, resource);
                         }
                         
-                        // get id 
-                        let operationId = getOperationId(api.paths, pathKey, verbKey, methodKey);
+                        const existingOpIds = Object.keys(resData['components']['x-stackQL-resources'][resource]['methods']);
+
+                        // get unique operation id 
+                        let operationId = getOperationId(api.paths, pathKey, verbKey, existingOpIds, methodKey);
                       
                         if(operationId){
                             log('info', `operationId : [${operationId}]`);
@@ -100,7 +112,7 @@ export async function providerDev(options) {
                         }
                         
                         // add operation to resource
-                        resData = addOperation(resData, service, resource, operationId, api.paths, pathKey, verbKey);
+                        resData = addOperation(resData, serviceDirName, resource, operationId, api.paths, pathKey, verbKey);
     
                         // map sqlVerbs for operation
                         resData = addSqlVerb(api.paths[pathKey][verbKey], resData, operationId, resource, pathKey);
@@ -133,8 +145,10 @@ export async function providerDev(options) {
         // update provider doc
         providerData = updateProviderData(
             providerData, 
-            providerName, 
-            providerVersion, 
+            providerName,
+            providerVersion,
+            serviceDirName, 
+            serviceVersion, 
             service, 
             api.title, 
             api.description, 
