@@ -1,4 +1,5 @@
 const jp = require('jsonpath');
+
 import { 
     log,
     camelToSnake,
@@ -7,6 +8,7 @@ import {
     getAllPathTokens,
  } 
 from './shared-functions.js';
+import { getSqlVerbForProvider } from './provider-custom-functions.js';
 
 function getResourceName(providerName, operation, service, resDiscriminator, pathKey){
     if(resDiscriminator == 'path_tokens'){
@@ -24,13 +26,16 @@ function getResourceName(providerName, operation, service, resDiscriminator, pat
     }
 }
 
-function getOperationId(apiPaths, pathKey, verbKey, existingOpIds, methodKey){
+function getOperationId(apiPaths, pathKey, verbKey, existingOpIds, methodKey, service){
     let operationId = apiPaths[pathKey][verbKey][methodKey];
     if (operationId){
         if (operationId.includes('/')){
             operationId = operationId.split('/')[1]
         } 
-        operationId = operationId.replace(/-/g, '_').replace(/\./g, '_'); 
+        operationId = operationId.replace(/-/g, '_').replace(/\./g, '_');
+        if (operationId.startsWith(service + '_')){
+            operationId = operationId.replace(service + '_', '');
+        }
         // check for uniqueness
         if (existingOpIds.includes(operationId)){
             // preserve op type
@@ -63,25 +68,37 @@ function getOperationRef(service, pathKey, verbKey){
 }
 
 function getResponseCode(responses){
-    let respcode = '200';    
-    Object.keys(responses).forEach(respKey => {
-        if (respKey.startsWith('2')){
-            respcode = respKey;
-        };
-    });
+    let respcode = '200';
+    if (responses){
+        Object.keys(responses).forEach(respKey => {
+            if (respKey.startsWith('2')){
+                respcode = respKey;
+            };
+        });
+    }
     return respcode;
 }
 
-function getSqlVerb(operationId){
-    let verb = 'exec';
-    if (operationId.startsWith('get') || operationId.startsWith('list') || operationId.startsWith('select') || operationId.startsWith('read') || operationId.endsWith('list')){
-        verb = 'select';
-    } else if (operationId.startsWith('create') || operationId.startsWith('insert') || operationId.startsWith('add') || operationId.startsWith('post') || operationId.endsWith('create')){
-        verb = 'insert';
-    } else if (operationId.startsWith('delete') || operationId.startsWith('remove') || operationId.endsWith('delete')){
-        verb = 'delete';
-    };
-    return verb;
+function getSqlVerb(operationId, verbKey, providerName){
+    if(providerName == 'google'){
+        return getSqlVerbForProvider(operationId, verbKey);
+    } else {
+        let verb = 'exec';
+        if (operationId.includes('recreate') || operationId.startsWith('undelete') || verbKey == 'patch' || verbKey == 'put'){
+            verb = 'exec';
+        } else if (verbKey == 'delete') {
+            if (operationId.includes('delete') || operationId.startsWith('remove')){
+                verb = 'delete';
+            }
+        } else if (verbKey == 'post'){
+            if (operationId.includes('create') || operationId.startsWith('insert') || operationId.startsWith('add') || operationId.startsWith('post')){
+                verb = 'insert';
+            }
+        } else if (operationId.includes('get') || operationId.startsWith('list') || operationId.startsWith('select') || operationId.startsWith('read') || operationId.endsWith('list')){
+            verb = 'select';
+        };
+        return verb;
+    }
 }
 
 function initProviderData(providerName, providerVersion){
@@ -115,7 +132,8 @@ function addResource(resData, providerName, service, resource){
     return resData;
 }
 
-function addOperation(resData, serviceDirName, resource, operationId, apiPaths, pathKey, verbKey){
+function addOperation(resData, serviceDirName, resource, operationId, api, pathKey, verbKey){
+    let apiPaths = api.paths;
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId] = {};
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['operation'] = {};
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response'] = {};
@@ -124,6 +142,29 @@ function addOperation(resData, serviceDirName, resource, operationId, apiPaths, 
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['mediaType'] = 'application/json';
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['openAPIDocKey'] =
         getResponseCode(apiPaths[pathKey][verbKey]['responses']);
+
+    // get resp item
+    let resp = 'items';
+    // if(apiPaths[pathKey][verbKey]['responses'] && apiPaths[pathKey][verbKey]['responses']['200']){
+    //     let schemaRef = apiPaths[pathKey][verbKey]['responses']['200']['content']['application/json']['schema']['$ref'].split('/').slice(-1);
+    //     let schema = api.components.schemas[schemaRef];
+    //     if(schema['properties']){
+    //         let realprops = [];
+    //         for(let prop in schema['properties']){
+    //             if(prop['type'] && prop['type'] == 'array' && prop['items']){
+    //                 realprops.push(prop);
+    //             }
+    //         }
+    //         if(realprops.length == 1){
+    //             resp = realprops[0];
+    //         } else if(realprops.length > 1){
+    //             resp = 'multipleItems';
+    //         } else {
+    //             resp = 'noItems';
+    //         }
+    //     }
+    // }
+    resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['objectKey'] = resp;
     return resData;
 }
 
@@ -150,8 +191,8 @@ function getAllValuesForKey(obj, key, excludeKeys=[], refs=[]) {
     return refs;
 }
 
-function addSqlVerb(op, resData, operationId, resource, pathKey){
-    switch (getSqlVerb(operationId)) {
+function addSqlVerb(op, resData, operationId, resource, pathKey, verbKey, providerName){
+    switch (getSqlVerb(operationId, verbKey, providerName)) {
         case 'select':
             resData['components']['x-stackQL-resources'][resource]['sqlVerbs']['select'].push(
                 {

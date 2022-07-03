@@ -34,7 +34,49 @@ function getCustomResourceName(resource, providerName, pathKey){
     };
 }
 
+function getSqlVerbForProvider(operationId, verbKey){
+    let verb = 'exec';
+    let action = operationId.split('_').slice(-1)[0];
+    if (
+        action.startsWith('add') && 
+        action !== 'addons'
+        ){
+        verb = 'insert';
+    } else if (
+        action.startsWith('create') ||
+        action.startsWith('insert') ||
+        action === 'batchCreate' ||
+        action === 'bulkInsert'
+    ){
+        verb = 'insert';
+    } else if (
+        action.startsWith('get') ||
+        action.startsWith('list') ||
+        action.startsWith('aggregated') ||
+        action.startsWith('batchGet') ||
+        action.startsWith('fetch') ||
+        // action.startsWith('query') ||
+        action.startsWith('read') ||
+        action.startsWith('retrieve')
+        // || action.startsWith('search')
+    ){
+        verb = 'select';
+    } else if (
+        action.startsWith('delete') ||
+        action.startsWith('remove') ||
+        action === 'batchDelete' ||
+        action === 'destroy' ||
+        action === 'dropDatabase'
+    ){
+        if(action != 'removeProject'){
+            verb = 'delete';    
+        }
+    }
+    return verb;
+}
+
 export { 
     getCustomServiceNameAndDesc,
     getCustomResourceName,
+    getSqlVerbForProvider,
 };

@@ -103,7 +103,7 @@ export async function providerDev(options) {
                         const existingOpIds = Object.keys(resData['components']['x-stackQL-resources'][resource]['methods']);
 
                         // get unique operation id 
-                        let operationId = getOperationId(api.paths, pathKey, verbKey, existingOpIds, methodKey);
+                        let operationId = getOperationId(api.paths, pathKey, verbKey, existingOpIds, methodKey, service);
                       
                         if(operationId){
                             log('info', `operationId : [${operationId}]`);
@@ -112,10 +112,10 @@ export async function providerDev(options) {
                         }
                         
                         // add operation to resource
-                        resData = addOperation(resData, serviceDirName, resource, operationId, api.paths, pathKey, verbKey);
+                        resData = addOperation(resData, serviceDirName, resource, operationId, api, pathKey, verbKey);
     
                         // map sqlVerbs for operation
-                        resData = addSqlVerb(api.paths[pathKey][verbKey], resData, operationId, resource, pathKey);
+                        resData = addSqlVerb(api.paths[pathKey][verbKey], resData, operationId, resource, pathKey, verbKey, providerName);
     
                     } catch (e) {
                         if (e !== 'Break') throw e
