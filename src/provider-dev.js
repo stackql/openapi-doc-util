@@ -112,7 +112,7 @@ export async function providerDev(options) {
                         }
                         
                         // add operation to resource
-                        resData = addOperation(resData, serviceDirName, resource, operationId, api, pathKey, verbKey);
+                        resData = addOperation(resData, serviceDirName, resource, operationId, api, pathKey, verbKey, providerName);
     
                         // map sqlVerbs for operation
                         resData = addSqlVerb(api.paths[pathKey][verbKey], resData, operationId, resource, pathKey, verbKey, providerName);

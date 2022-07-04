@@ -37,6 +37,7 @@ function getCustomResourceName(resource, providerName, pathKey){
 function getSqlVerbForProvider(operationId, verbKey){
     let verb = 'exec';
     let action = operationId.split('_').slice(-1)[0];
+    let resource = operationId.split('_').slice(-2)[0];
     if (
         action.startsWith('add') && 
         action !== 'addons'
@@ -61,6 +62,22 @@ function getSqlVerbForProvider(operationId, verbKey){
         // || action.startsWith('search')
     ){
         verb = 'select';
+        // aggregated scoped list 
+        if((resource == 'healthChecks' || 
+            resource == 'backendServices' || 
+            resource == 'globalOperations' || 
+            resource == 'securityPolicies' ||
+            resource == 'sslCertificates' ||
+            resource == 'targetHttpProxies' ||
+            resource == 'targetHttpsProxies' ||
+            resource == 'urlMaps'
+        ) && action == 'aggregatedList'){
+            verb = 'exec';
+        }
+        // exceptions
+        if(resource == 'relyingparty' && action == 'getPublicKeys'){
+            verb = 'exec';
+        }
     } else if (
         action.startsWith('delete') ||
         action.startsWith('remove') ||

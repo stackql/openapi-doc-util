@@ -132,7 +132,7 @@ function addResource(resData, providerName, service, resource){
     return resData;
 }
 
-function addOperation(resData, serviceDirName, resource, operationId, api, pathKey, verbKey){
+function addOperation(resData, serviceDirName, resource, operationId, api, pathKey, verbKey, providerName){
     let apiPaths = api.paths;
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId] = {};
     resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['operation'] = {};
@@ -144,21 +144,21 @@ function addOperation(resData, serviceDirName, resource, operationId, api, pathK
         getResponseCode(apiPaths[pathKey][verbKey]['responses']);
 
     // get resp item
-    let resp = 'items';
-    if(apiPaths[pathKey][verbKey]['responses'] && apiPaths[pathKey][verbKey]['responses']['200']){
-        let schemaRef = apiPaths[pathKey][verbKey]['responses']['200']['content']['application/json']['schema']['$ref'].split('/').slice(-1);
-        if(schemaRef[0].match(/^List/)){
-            let schema = api.components.schemas[schemaRef];
-            if(schema['properties']){
-                let realprops = [];
-                for(let prop in schema['properties']){
-                    if(schema['properties'][prop]['type'] && schema['properties'][prop]['type'] == 'array' && schema['properties'][prop]['items']){
-                        realprops.push(prop);
+    if(providerName == 'google'){
+        if(apiPaths[pathKey][verbKey]['responses'] && apiPaths[pathKey][verbKey]['responses']['200']){
+            let schemaRef = apiPaths[pathKey][verbKey]['responses']['200']['content']['application/json']['schema']['$ref'].split('/').slice(-1);
+            if(schemaRef[0].match(/^List/)){
+                let schema = api.components.schemas[schemaRef];
+                if(schema['properties']){
+                    let realprops = [];
+                    for(let prop in schema['properties']){
+                        if(schema['properties'][prop]['type'] && schema['properties'][prop]['type'] == 'array' && schema['properties'][prop]['items']){
+                            realprops.push(prop);
+                        }
                     }
-                }
-                if(realprops.length == 1){
-                    resp = realprops[0];
-                    resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['objectKey'] = resp;
+                    if(realprops.length == 1){
+                        resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['objectKey'] = realprops[0];
+                    }
                 }
             }
         }
