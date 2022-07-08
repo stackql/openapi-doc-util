@@ -34,7 +34,7 @@ function getCustomResourceName(resource, providerName, pathKey){
     };
 }
 
-function getSqlVerbForProvider(operationId, verbKey){
+function getSqlVerbForGoogleProvider(operationId, verbKey){
     let verb = 'exec';
     let action = operationId.split('_').slice(-1)[0];
     let resource = operationId.split('_').slice(-2)[0];
@@ -95,5 +95,5 @@ function getSqlVerbForProvider(operationId, verbKey){
 export { 
     getCustomServiceNameAndDesc,
     getCustomResourceName,
-    getSqlVerbForProvider,
+    getSqlVerbForGoogleProvider,
 };

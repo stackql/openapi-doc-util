@@ -8,7 +8,7 @@ import {
     getAllPathTokens,
  } 
 from './shared-functions.js';
-import { getSqlVerbForProvider } from './provider-custom-functions.js';
+import { getSqlVerbForGoogleProvider } from './provider-custom-functions.js';
 
 function getResourceName(providerName, operation, service, resDiscriminator, pathKey){
     if(resDiscriminator == 'path_tokens'){
@@ -26,16 +26,21 @@ function getResourceName(providerName, operation, service, resDiscriminator, pat
     }
 }
 
-function getOperationId(apiPaths, pathKey, verbKey, existingOpIds, methodKey, service){
+function getOperationId(apiPaths, pathKey, verbKey, existingOpIds, methodKey, service, resource){
     let operationId = apiPaths[pathKey][verbKey][methodKey];
     if (operationId){
         if (operationId.includes('/')){
             operationId = operationId.split('/')[1]
         } 
         operationId = operationId.replace(/-/g, '_').replace(/\./g, '_');
+        // remove service prefix
         if (operationId.startsWith(service + '_')){
             operationId = operationId.replace(service + '_', '');
         }
+        // remove resource prefix
+        if (operationId.startsWith(resource + '_')){
+            operationId = operationId.replace(resource + '_', '');
+        }        
         // check for uniqueness
         if (existingOpIds.includes(operationId)){
             // preserve op type
@@ -81,7 +86,7 @@ function getResponseCode(responses){
 
 function getSqlVerb(operationId, verbKey, providerName){
     if(providerName == 'google'){
-        return getSqlVerbForProvider(operationId, verbKey);
+        return getSqlVerbForGoogleProvider(operationId, verbKey);
     } else {
         let verb = 'exec';
         if (operationId.includes('recreate') || operationId.startsWith('undelete') || verbKey == 'patch' || verbKey == 'put'){

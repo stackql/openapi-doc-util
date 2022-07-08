@@ -103,7 +103,7 @@ export async function providerDev(options) {
                         const existingOpIds = Object.keys(resData['components']['x-stackQL-resources'][resource]['methods']);
 
                         // get unique operation id 
-                        let operationId = getOperationId(api.paths, pathKey, verbKey, existingOpIds, methodKey, service);
+                        let operationId = getOperationId(api.paths, pathKey, verbKey, existingOpIds, methodKey, service, resource);
                       
                         if(operationId){
                             log('info', `operationId : [${operationId}]`);
