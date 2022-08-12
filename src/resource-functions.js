@@ -8,7 +8,9 @@ import {
     getAllPathTokens,
  } 
 from './shared-functions.js';
-import { getSqlVerbForGoogleProvider } from './provider-custom-functions.js';
+import { 
+    getSqlVerbForGoogleProvider,
+} from './provider-custom-functions.js';
 
 function getResourceName(providerName, operation, service, resDiscriminator, pathKey){
     if(resDiscriminator == 'path_tokens'){
@@ -84,9 +86,11 @@ function getResponseCode(responses){
     return respcode;
 }
 
-function getSqlVerb(operationId, verbKey, providerName){
+function getSqlVerb(op, operationId, verbKey, providerName){
     if(providerName == 'google'){
         return getSqlVerbForGoogleProvider(operationId, verbKey);
+    } else if (providerName == 'azure'){
+        return op['x-stackQL-verb'];
     } else {
         let verb = 'exec';
         if (operationId.includes('recreate') || operationId.startsWith('undelete') || verbKey == 'patch' || verbKey == 'put'){
@@ -195,7 +199,7 @@ function getAllValuesForKey(obj, key, excludeKeys=[], refs=[]) {
 }
 
 function addSqlVerb(op, resData, operationId, resource, pathKey, verbKey, providerName){
-    switch (getSqlVerb(operationId, verbKey, providerName)) {
+    switch (getSqlVerb(op,operationId, verbKey, providerName)) {
         case 'select':
             resData['components']['x-stackQL-resources'][resource]['sqlVerbs']['select'].push(
                 {
