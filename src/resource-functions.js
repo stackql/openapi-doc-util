@@ -11,6 +11,7 @@ from './shared-functions.js';
 import { 
     getSqlVerbForGoogleProvider,
 } from './provider-custom-functions.js';
+import { getAzureOpObjectKey } from './providers/azure.js';
 
 function getResourceName(providerName, operation, service, resDiscriminator, pathKey){
     if(resDiscriminator == 'path_tokens'){
@@ -89,7 +90,7 @@ function getResponseCode(responses){
 function getSqlVerb(op, operationId, verbKey, providerName){
     if(providerName == 'google'){
         return getSqlVerbForGoogleProvider(operationId, verbKey);
-    } else if (providerName == 'azure'){
+    } else if (providerName == 'azure' || providerName == 'azure_extras'){
         return op['x-stackQL-verb'];
     } else {
         let verb = 'exec';
@@ -153,6 +154,12 @@ function addOperation(resData, serviceDirName, resource, operationId, api, pathK
         getResponseCode(apiPaths[pathKey][verbKey]['responses']);
 
     // get resp item
+    if(providerName == 'azure' || providerName == 'azure_extras'){
+        if (getAzureOpObjectKey(serviceDirName, resource) != 'none'){
+            resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['objectKey'] = getAzureOpObjectKey(serviceDirName, resource);
+        }
+    }
+
     if(providerName == 'google'){
         if(apiPaths[pathKey][verbKey]['responses'] && apiPaths[pathKey][verbKey]['responses']['200']){
             let schemaRef = apiPaths[pathKey][verbKey]['responses']['200']['content']['application/json']['schema']['$ref'].split('/').slice(-1);
