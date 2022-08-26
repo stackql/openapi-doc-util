@@ -25,6 +25,10 @@ function getResourceName(providerName, operation, service, resDiscriminator, pat
         return resTokens.length > 0 ? resTokens.join('_') : service;
     } else {
         let resValue = jp.query(operation, resDiscriminator)[0];
+        // temp res name fix for azure to be superceded by an update to https://github.com/stackql/stackql-azure-openapi
+        if (providerName == 'azure' && service == 'network' && resValue == 'p2_s_vpn_gateways'){
+            resValue = 'p2s_vpn_gateways';
+        }
         return resValue ? camelToSnake(resValue) : service;
     }
 }
@@ -155,8 +159,8 @@ function addOperation(resData, serviceDirName, resource, operationId, api, pathK
 
     // get resp item
     if(providerName == 'azure' || providerName == 'azure_extras'){
-        if (getAzureOpObjectKey(serviceDirName, resource) != 'none'){
-            resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['objectKey'] = getAzureOpObjectKey(serviceDirName, resource);
+        if (getAzureOpObjectKey(serviceDirName, resource, verbKey) != 'none'){
+            resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['objectKey'] = getAzureOpObjectKey(serviceDirName, resource, verbKey);
         }
     }
 
