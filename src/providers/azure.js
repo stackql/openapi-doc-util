@@ -33,6 +33,14 @@ function getAzureOpObjectKey(service, resource, verbKey){
             if (resource === 'cloud_manifest_file'){
                 objectKey = 'none';
             }
+        // new
+        } else if (service === 'cdn'){
+            if (resource === 'afd_origin_groups' ||
+                resource === 'afd_origins' ||
+                resource === 'routes' ||
+                resource === 'rules'){
+                    objectKey = 'none';
+            }
         } else if (service === 'compute'){
             if (resource === 'virtual_machine_images' || 
                 resource === 'virtual_machine_images_edge_zone' || 
@@ -77,10 +85,20 @@ function getAzureOpObjectKey(service, resource, verbKey){
             if (resource === 'private_endpoint_connections'){
                 objectKey = 'none';
             }
+        // new    
+        } else if (service === 'maria_db'){
+            if (resource === 'advisors'){
+                objectKey = 'none';
+            }
         } else if (service === 'marketplace_ordering'){
             if (resource === 'marketplace_agreements'){
                 objectKey = 'none';
-            }    
+            }   
+        // new                
+        } else if (service === 'mysql'){
+            if (resource === 'advisors'){
+                objectKey = 'none';
+            }            
         } else if (service === 'network'){
             if (resource === 'firewall_policy_idps_signatures' || 
                 resource === 'firewall_policy_idps_signatures_filter_values' || 
