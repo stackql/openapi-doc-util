@@ -11,7 +11,6 @@ from './shared-functions.js';
 import { 
     getSqlVerbForGoogleProvider,
 } from './provider-custom-functions.js';
-import { getAzureOpObjectKey } from './providers/azure.js';
 
 function getResourceName(providerName, operation, service, resDiscriminator, pathKey){
     if(resDiscriminator == 'path_tokens'){
@@ -25,10 +24,6 @@ function getResourceName(providerName, operation, service, resDiscriminator, pat
         return resTokens.length > 0 ? resTokens.join('_') : service;
     } else {
         let resValue = jp.query(operation, resDiscriminator)[0];
-        // temp res name fix for azure to be superceded by an update to https://github.com/stackql/stackql-azure-openapi
-        if (providerName == 'azure' && service == 'network' && resValue == 'p2_s_vpn_gateways'){
-            resValue = 'p2s_vpn_gateways';
-        }
         return resValue ? camelToSnake(resValue) : service;
     }
 }
@@ -84,7 +79,13 @@ function getResponseCode(responses){
     if (responses){
         Object.keys(responses).forEach(respKey => {
             if (respKey.startsWith('2')){
-                respcode = respKey;
+                if (responses[respKey]['content']){
+                    if (responses[respKey]['content']['application/json']){
+                        if (responses[respKey]['content']['application/json']['schema']){
+                            respcode = respKey;
+                        }
+                    }
+                }
             };
         });
     }
@@ -159,8 +160,10 @@ function addOperation(resData, serviceDirName, resource, operationId, api, pathK
 
     // get resp item
     if(providerName == 'azure' || providerName == 'azure_extras'){
-        if (getAzureOpObjectKey(serviceDirName, resource, verbKey) != 'none'){
-            resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['objectKey'] = getAzureOpObjectKey(serviceDirName, resource, verbKey);
+        if(verbKey === 'get'){
+            if (api.paths[pathKey][verbKey]['x-stackQL-objectKey'] != 'none'){
+                resData['components']['x-stackQL-resources'][resource]['methods'][operationId]['response']['objectKey'] = api.paths[pathKey][verbKey]['x-stackQL-objectKey'];
+            }
         }
     }
 

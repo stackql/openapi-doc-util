@@ -1,6 +1,6 @@
 {
   "name": "@stackql/openapi-doc-util",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Command line utility to split OpenAPI documents into smaller, self contained, service oriented documents and prepare StackQL provider interfaces",
   "main": "src/index.js",
   "bin": {
