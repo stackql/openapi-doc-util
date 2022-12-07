@@ -7,6 +7,9 @@ import {
     printOptions,
     createDestDir,
 } from './shared-functions.js';
+import { 
+    fixAllOffIssue,
+} from './resource-functions.js';
 
 export async function providerBuild(options) {
 
@@ -19,9 +22,22 @@ export async function providerBuild(options) {
     const providerName = options.providerName;
     const providerVersion = options.providerVersion;
     const overwrite = options.overwrite;
+    const servers = options.servers;
     const destDir = `${options.outputDir}/${providerName}/${providerVersion}`;
     const inputDir = `${apiDocDirRoot}/${providerName}/${providerVersion}`;
 
+    let serversObj = [];
+    if (servers){
+        try {
+            serversObj = JSON.parse(servers);
+            log('info', `servers will be replaced with...`);    
+            console.log(serversObj);
+        } catch (e) {
+            log('error', `invalid servers value: ${servers}, not JSON`);
+            return false
+        }
+    }
+    
     if(options.debug){
         printOptions(options);
     } else {
@@ -79,6 +95,14 @@ export async function providerBuild(options) {
         Object.keys(api).forEach(openapiKey => {
             outputData[openapiKey] = api[openapiKey];
         });
+
+        // fix AllOf issue
+        outputData['components']['schemas'] = fixAllOffIssue(outputData['components']['schemas']);
+
+        // replace servers?
+        if (servers){
+            outputData['servers'] = serversObj;
+        }
 
         // get stackql resource definitions
         log('info', `processing resource definitions for ${service}...`);

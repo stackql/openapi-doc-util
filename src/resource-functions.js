@@ -17,7 +17,7 @@ function getResourceName(providerName, operation, service, resDiscriminator, pat
         let resTokens = [];
         let pathTokens = getMeaningfulPathTokens(pathKey);
         for (let i in pathTokens) {
-            if (pathTokens[i] != service && pathTokens[i].length > 0){
+            if (camelToSnake(pathTokens[i]) != service && pathTokens[i].length > 0){
                 resTokens.push(camelToSnake(pathTokens[i]));
             }
         }
@@ -289,7 +289,25 @@ function updateProviderData(
         providerData.title = providerTitle;
         return providerData;
 }
- 
+
+function fixAllOffIssue(inputSchemas){
+    let outputSchemas = {};
+
+    Object.keys(inputSchemas).forEach(schema => {
+        if(inputSchemas[schema].allOf){
+            let newSchema = inputSchemas[schema];
+            if(inputSchemas[schema].type){
+                delete newSchema.type;
+            }
+            outputSchemas[schema] = newSchema;
+        } else {
+            outputSchemas[schema] = inputSchemas[schema];
+        }
+    });
+
+    return outputSchemas;
+}
+
 export {
     getResourceName,
     getOperationId,
@@ -300,4 +318,5 @@ export {
     addSqlVerb,
     updateProviderData,
     compareSqlVerbObjects,
+    fixAllOffIssue,
   }

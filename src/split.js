@@ -105,12 +105,28 @@ export async function split(options) {
                 addRefsToComponents(opRefs, services[service], api.components, options.debug);
 
                 // get internal refs
-                let internalRefDepth = 2;
+                let internalRefDepth = 3;
                 for (let i = 0; i < internalRefDepth; i++){
                     let intRefs = getAllRefs(services[service]['components']);
                     log('debug', `found ${intRefs.length} INTERNAL refs`, options.debug);
                     addRefsToComponents(intRefs, services[service], api.components, options.debug);
                 }
+
+                // get internal refs for deeply nested schemas
+                let schemaMaxRefDepth = 10;
+                for (let i = 0; i < schemaMaxRefDepth; i++){
+                    let intRefs = getAllRefs(services[service]['components']);
+                    intRefs = intRefs.filter(ref => !services[service]['components']['schemas'].hasOwnProperty(ref.split('/').pop()));
+                    log('debug', `found ${intRefs.length} INTERNAL schema refs`, options.debug);
+                    if(intRefs.length > 0){
+                        log('debug', `adding ${intRefs.length} INTERNAL schema refs`, options.debug);
+                        addRefsToComponents(intRefs, services[service], api.components, options.debug);
+                    } else {
+                        log('debug', `Exiting INTERNAL schema refs for ${service}`, options.debug);
+                        break;
+                    }
+                }                
+
             }
         });
     });
