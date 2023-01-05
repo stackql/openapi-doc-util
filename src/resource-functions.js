@@ -213,14 +213,15 @@ function getAllValuesForKey(obj, key, excludeKeys=[], refs=[]) {
 }
 
 function addSqlVerb(op, resData, operationId, resource, pathKey, verbKey, providerName){
+    const pattern = /\{(\+)?[\w]*\}/g;
     switch (getSqlVerb(op,operationId, verbKey, providerName)) {
         case 'select':
             resData['components']['x-stackQL-resources'][resource]['sqlVerbs']['select'].push(
                 {
                     '$ref': `#/components/x-stackQL-resources/${resource}/methods/${operationId}`,
                     'path': pathKey,
-                    'numTokens': (pathKey.match(/\{[\w]*\}/g) || []).length,   
-                    'tokens': (pathKey.match(/\{[\w]*\}/g) || []).join(','),
+                    'numTokens': (pathKey.match(pattern) || []).length,   
+                    'tokens': (pathKey.match(pattern) || []).join(','),
                     'enabled': true,
                     'respSchema': getRespSchemaName(op), 
                 });
@@ -230,8 +231,8 @@ function addSqlVerb(op, resData, operationId, resource, pathKey, verbKey, provid
                 {
                     '$ref': `#/components/x-stackQL-resources/${resource}/methods/${operationId}`,
                     'path': pathKey,
-                    'numTokens': (pathKey.match(/\{[\w]*\}/g) || []).length,   
-                    'tokens': (pathKey.match(/\{[\w]*\}/g) || []).join(','),
+                    'numTokens': (pathKey.match(pattern) || []).length,   
+                    'tokens': (pathKey.match(pattern) || []).join(','),
                     'enabled': true                                        
                 });
             break;
@@ -240,8 +241,8 @@ function addSqlVerb(op, resData, operationId, resource, pathKey, verbKey, provid
                 {
                     '$ref': `#/components/x-stackQL-resources/${resource}/methods/${operationId}`,
                     'path': pathKey,
-                    'numTokens': (pathKey.match(/\{[\w]*\}/g) || []).length,   
-                    'tokens': (pathKey.match(/\{[\w]*\}/g) || []).join(','),
+                    'numTokens': (pathKey.match(pattern) || []).length,   
+                    'tokens': (pathKey.match(pattern) || []).join(','),
                     'enabled': true
                 });
             break;
